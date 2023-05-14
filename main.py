@@ -42,7 +42,8 @@ async def on_message(message):
             await message.channel.send("""```
 To change the model to GPT-3.5, type: !gpt-3.5-turbo
 To change the model to GPT-4, type: !gpt-4
-To clear the message context, type: !clear```""")
+To clear the message context, type: !clear
+To update the AI's persona, type: '!persona' followed by the new persona's description (e.g. '!persona This is the new persona')```""")
             return
         if message.content == "!clear":
             messages = [{'role': "system", 'content': persona}]
@@ -55,6 +56,11 @@ To clear the message context, type: !clear```""")
             #messages = [{'role': "system", 'content': persona}]
             modelname = "gpt-3.5-turbo"
             await message.channel.send("Updated model to: " + modelname)
+            return
+        if message.content.startswith('!persona'):
+            updated_persona = message.content.split('!persona')[1]
+            messages = [{'role': "system", 'content': updated_persona}]
+            await message.channel.send("Updated persona to: " + updated_persona)
             return
     f = open("logs.txt", "a+")
     f.write(str(datetime.datetime.now()) + " - User: " + message.content + "\n")

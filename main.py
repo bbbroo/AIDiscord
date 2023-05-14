@@ -92,6 +92,7 @@ To reset the AI's persona, type: !resetpersona```""")
         
     except Exception as e:
         print(e)
+        await message.channel.send(e)
         await message.channel.send("Something went wrong, try asking again.")
         return
     

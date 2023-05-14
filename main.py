@@ -126,9 +126,14 @@ To reset the AI's persona, type: !resetpersona```""")
         messages.append({'role': "assistant", 'content': output})
 
         #Writing AI's response to the 'logs.txt' file
-        f = open("Logs.txt", "a")
+        f = open("logs.txt", "a")
         f.write(str(datetime.datetime.now()) + " - Assistant: " + output + "\n")
         f.close()
+
+        #Writing message context to file. It is less readable but useful when attempting to pick up previous conversations
+        g = open("contextlogs.txt", "a+")
+        g.write(str(messages))
+        g.close()
 
         #Discord only allows 2000 characters to be output, so splitting the text up may be necessary 
         output_length = len(output)

@@ -41,6 +41,7 @@ async def on_message(message):
     if message.content[0] == "!":
         if message.content == "!help":
             await message.channel.send("""```
+To show current AI model, type: !model
 To change the model to GPT-3.5, type: !gpt-3.5-turbo
 To change the model to GPT-4, type: !gpt-4
 To clear the message context, type: !clear
@@ -69,6 +70,9 @@ To reset the AI's persona, type: !resetpersona```""")
             messages.append({'role': "system", 'content': persona})
             await message.channel.send("Persona has been reset!")
             return
+        if message.content.startswith('!model'):
+            await message.channel.send("The current AI model is: " + modelname)
+            return
     f = open("logs.txt", "a+")
     f.write(str(datetime.datetime.now()) + " - User: " + message.content + "\n")
     f.close()
@@ -86,9 +90,8 @@ To reset the AI's persona, type: !resetpersona```""")
         f.close()
         output_length = len(output)
         num_of_outputs = (output_length // 1900) + 1
-        #await message.channel.send(modelname+ ": " +output[:1900])
         for i in range(0,num_of_outputs):
-            await message.channel.send(modelname+ ": " +output[(1900*(i)):(1900*(i+1))])
+            await message.channel.send(output[(1900*(i)):(1900*(i+1))])
         
     except Exception as e:
         print(e)

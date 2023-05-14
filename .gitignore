@@ -43,3 +43,6 @@ next-env.d.ts
 archived_logs.txt
 logs.txt
 contextlogs.txt
+test.py
+test.txt
+test1.py

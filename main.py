@@ -9,8 +9,11 @@ from dotenv import load_dotenv
 #Recognize env variables
 load_dotenv()
 
+assistants = {}
+active_assistant = None
+
 #Initial AI Model, can change to "gpt-4" if access is enabled 
-modelname = 'gpt-4' #'gpt-4' #'gpt-3.5-turbo'
+modelname = 'gpt-3.5-turbo' #'gpt-4' #'gpt-3.5-turbo'
 #List of acceptable inputs for changing AI model to GPT-3.5
 gpt35names=["!gpt-3.5-turbo", "!gpt-3.5", "!gpt3.5", "!gpt3", "!gpt35", "!gpt-35"]
 #List of acceptable inputs for changing AI model to GPT-4
@@ -34,6 +37,7 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 async def on_ready():
     global persona
     global messages
+    global channel
 
     #Set Discord channel to interact with OpenAI
     channel = bot.get_channel(int(os.getenv('DISCORD_CHANNEL_ID')))
@@ -56,6 +60,9 @@ async def on_ready():
 
     #Initiaing the AI's context array, and setting the AI's persona: USE FOR STARTING NEW CONTEXT
     messages = [{'role': "system", 'content': persona}]
+
+    #Initializing first assistant
+    await init_assistant('Default', persona, channel)
 
     #Picking up the past AI's context array: USE FOR PICKING UP PAST CONVERSATION
     #messages = list(eval(persona))
@@ -88,35 +95,37 @@ To change the model to GPT-4, type: !gpt-4
 To clear the message context, type: !clear
 To get the AI's current persona, type: !persona
 To update the AI's persona, type: '!updatepersona' followed by the new persona's description (e.g. '!updatepersona This is the new persona')
-To reset the AI's persona, type: !resetpersona```""")
+To reset the AI's persona, type: !resetpersona
+To add another assistant for an additional conversation context, without losing the current conversation, type: "!create" followed by the assistant's name(can only be one word) and the persona (e.g. '!create FunnyBot You are a master joke teller.') 
+To switch between assistants, type: '!switch' followed by the name of the assistant (e.g. !switch FunnyBot) ```""")
             return
         
         #Command to clear the message context with the AI
         if cleaned_message.startswith('!clear'):
-            messages = [{'role': "system", 'content': persona}]
+            assistants[active_assistant]["messages"] = [{'role': "system", 'content': persona}]
             await message.channel.send("Cleared message context.")
             return
         #Command to get persona
         if cleaned_message.startswith('!persona'):
             await message.channel.send("The current persona is: ")
-            await output_text(persona, message)
+            await output_text(persona, channel)
             return
         #Command to update persona
         if cleaned_message.startswith('!updatepersona'):
             updated_persona = message.content.strip()[14:]
             if updated_persona != "":
-                messages.append({'role': "system", 'content': updated_persona})
+                assistants[active_assistant]["messages"].append({'role': "system", 'content': updated_persona})
                 await message.channel.send("Updated persona to: ")
-                await output_text(updated_persona, message)
+                await output_text(updated_persona, channel)
             else:
                 await message.channel.send("""```ansi
 \u001b[1;33mWARNING! Updated persona cannot be empty. Please add try the command again with text directly after the !updateprompt command, otherwise we can continue utilizing the current persona: """ + persona + "\n```")
             return
         #Command to reset persona
         if cleaned_message.startswith('!resetpersona'):
-            messages.append({'role': "system", 'content': persona})
+            assistants[active_assistant]["messages"].append({'role': "system", 'content': persona})
             await message.channel.send("Persona has been reset to:")
-            await output_text(persona, message)
+            await output_text(persona, channel)
             return
         #Command to see current AI model
         if cleaned_message.startswith('!model'):
@@ -134,9 +143,26 @@ To reset the AI's persona, type: !resetpersona```""")
             modelname = "gpt-3.5-turbo"
             await message.channel.send("Updated model to: " + modelname)
             return
+        #Command to create an assistant
+        elif cleaned_message.startswith('!create'):
+            name_and_persona = message.content.strip()[7:].strip().split(' ', 1)
+            if len(name_and_persona) == 2:
+                await init_assistant(name_and_persona[0].strip(), name_and_persona[1].strip(), channel)
+            else:
+                await message.channel.send("Please provide a valid assistant name and persona after the !initassistant command (e.g., !initassistant MyAssistant My persona is an expert in Python).")
+            return
+        elif cleaned_message.startswith('!switch'):
+            assistant_name = message.content.strip()[7:].strip()
+            if assistant_name != "":
+                await switch_assistant(assistant_name, channel)
+            else:
+                await message.channel.send("Please provide a valid assistant name after the !switchassistant command.")
+            return
         #This will only be reached if none of the !commands above were used
         await message.channel.send("The command was not recognized, please try again. Type !help for a list of the possible commands.")
         return
+    
+    
         
     #Writing users message to the AI to 'logs.txt' file
     f = open("logs.txt", "a+")
@@ -144,7 +170,11 @@ To reset the AI's persona, type: !resetpersona```""")
     f.close()
 
     #Adding users message to the 'messages' variable/adding it to the AI's context
-    messages.append({'role': "user", 'content': message.content})
+    assistants[active_assistant]["messages"].append({'role': "user", 'content': message.content})
+
+    #Retrieving the messages and personas of current assistant
+    messages = assistants[active_assistant]["messages"]
+    persona = assistants[active_assistant]["persona"]
 
     #Attempt to get a response from the OpenAI API, exception cases will run if error occurs
     try:
@@ -175,7 +205,7 @@ To reset the AI's persona, type: !resetpersona```""")
         #Get response text from API
         output = response['choices'][0]['message']['content']
         #Adding AI's response to the 'messages' variable/adding it to the AI's context
-        messages.append({'role': "assistant", 'content': output})
+        assistants[active_assistant]["messages"].append({'role': "assistant", 'content': output})
 
         #Writing AI's response to the 'logs.txt' file
         f = open("logs.txt", "a")
@@ -184,11 +214,11 @@ To reset the AI's persona, type: !resetpersona```""")
 
         #Writing message context to file. It is less readable but useful when attempting to pick up previous conversations
         g = open("contextlogs.txt", "a+")
-        g.write(str(messages))
+        g.write(str(assistants[active_assistant]["messages"]))
         g.close()
 
         #Call output function
-        await output_text(output, message)
+        await output_text(output, channel)
         
     #Handle errors recieved during attempt to get response from OpenAI's API
     except Exception as e:
@@ -198,42 +228,42 @@ To reset the AI's persona, type: !resetpersona```""")
         await message.channel.send(e)
         await message.channel.send("Something went wrong, try asking again.")
         return
-    
-
-'''
-#Function to query the OpenAI API
-async def query_openai_api():
-    async with message.channel.typing():
-        response = openai.ChatCompletion.create(
-            model=modelname,
-            messages=messages
-        )
-    return response
-
-
-#Function to retry querying the OpenAI API 5 seconds after receiving 'Connection error'
-async def retry_api(query_func, retry_delay=5):
-    while True:
-        try:
-            result = await query_func()
-            return result
-        except RemoteDisconnected as e:
-            print("Connection error. Retrying in", retry_delay, "seconds...")
-            await asyncio.sleep(retry_delay)
-'''
 
 #Function to split up responses to less than 1900 characters, if needed, since Discord messages are limited to 2000 words
-async def output_text(output, message):
+async def output_text(output, channel):
     output_length = len(output)
     num_of_outputs = (output_length // 1900) + 1
     #Loop to split up response every 1900 characters
     for i in range(0,num_of_outputs):
         #Output "Continued" to Discord if text is being continued from previous output
         if i >= 1:
-            await message.channel.send("(Continued)")
+            await channel.send("(Continued)")
         #Outputting the i'th iteration of 1900 characters (If more than 1900 characters are present, on first run it'll print out the first 1900 chars, then on the next run it'll print the next 1900 chars, and so on)
-        await message.channel.send(output[(1900*(i)):(1900*(i+1))])
+        await channel.send(output[(1900*(i)):(1900*(i+1))])
 
+#Initialize assistant
+async def init_assistant(name, persona, channel):
+    global active_assistant
+    if name not in assistants:
+        assistants[name] = {
+            "name": name,
+            "persona": persona,
+            "messages": [{'role': "system", 'content': persona}]
+        }
+        active_assistant = name
+        await channel.send(f'Created and switched to "{name}" with the persona: ')
+        await output_text(persona, channel)
+    else:
+        await channel.send(f'Assistant "{name}" already exists. Use !switchassistant {name} to switch to this assistant.')
     
+#Switch assistants
+async def switch_assistant(name, channel):
+    global active_assistant
+    if name in assistants:
+        active_assistant = name
+        await channel.send(f"Switched to {name}.")
+    else:
+        await channel.send(f"{name} not found. Initialize with !initassistant [name] [persona] or try again.")
+
 #Run Discord bot
 bot.run(os.getenv('DISCORD_BOT_TOKEN'))

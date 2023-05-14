@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-modelname = 'gpt-4'
+modelname = 'gpt-3.5'
 gpt35names=["!gpt-3.5-turbo","!gpt-3.5","!GPT-3.5","!GPT-3.5-turbo", "!gpt3.5"]
 gpt4names=["!gpt-4","!GPT-4", "!gpt4"]
 
@@ -34,6 +34,7 @@ async def on_ready():
 async def on_message(message):
     global modelname
     global messages
+    global persona
     # Ignore messages from the bot itself
     if message.author == bot.user:
         return
@@ -43,7 +44,8 @@ async def on_message(message):
 To change the model to GPT-3.5, type: !gpt-3.5-turbo
 To change the model to GPT-4, type: !gpt-4
 To clear the message context, type: !clear
-To update the AI's persona, type: '!persona' followed by the new persona's description (e.g. '!persona This is the new persona')```""")
+To update the AI's persona, type: '!persona' followed by the new persona's description (e.g. '!persona This is the new persona')
+To reset the AI's persona, type: !resetpersona```""")
             return
         if message.content == "!clear":
             messages = [{'role': "system", 'content': persona}]
@@ -61,6 +63,10 @@ To update the AI's persona, type: '!persona' followed by the new persona's descr
             updated_persona = message.content.split('!persona')[1]
             messages = [{'role': "system", 'content': updated_persona}]
             await message.channel.send("Updated persona to: " + updated_persona)
+            return
+        if message.content.startswith('!resetpersona'):
+            messages = [{'role': "system", 'content': persona}]
+            await message.channel.send("Persona has been reset!")
             return
     f = open("logs.txt", "a+")
     f.write(str(datetime.datetime.now()) + " - User: " + message.content + "\n")

@@ -57,6 +57,7 @@ async def on_message(message):
     global modelname
     global messages
     global persona
+    global output
     # Ignore messages from the bot itself
     if message.author == bot.user:
         return
@@ -71,7 +72,8 @@ To show current AI model, type: !model
 To change the model to GPT-3.5, type: !gpt-3.5-turbo
 To change the model to GPT-4, type: !gpt-4
 To clear the message context, type: !clear
-To update the AI's persona, type: '!persona' followed by the new persona's description (e.g. '!persona This is the new persona')
+To get the AI's current persona, type: !persona
+To update the AI's persona, type: '!updatepersona' followed by the new persona's description (e.g. '!updatepersona This is the new persona')
 To reset the AI's persona, type: !resetpersona```""")
             return
         
@@ -91,16 +93,23 @@ To reset the AI's persona, type: !resetpersona```""")
             modelname = "gpt-3.5-turbo"
             await message.channel.send("Updated model to: " + modelname)
             return
-        #Command to update persona
+        #Command to get persona
         if cleaned_message.startswith('!persona'):
-            updated_persona = message.content.split('!persona')[1]
+            await message.channel.send("The current persona is: ")
+            await output_text(persona, message)
+            return
+        #Command to update persona
+        if cleaned_message.startswith('!updatepersona'):
+            updated_persona = message.content.strip()[14:]
             messages.append({'role': "system", 'content': updated_persona})
-            await message.channel.send("Updated persona to: " + updated_persona)
+            await message.channel.send("Updated persona to: ")
+            await output_text(updated_persona, message)
             return
         #Command to reset persona
         if cleaned_message.startswith('!resetpersona'):
             messages.append({'role': "system", 'content': persona})
-            await message.channel.send("Persona has been reset!")
+            await message.channel.send("Persona has been reset to:")
+            await output_text(persona, message)
             return
         #Command to see current AI model
         if cleaned_message.startswith('!model'):
@@ -160,15 +169,7 @@ To reset the AI's persona, type: !resetpersona```""")
         g.close()
 
         #Discord only allows 2000 characters to be output, so splitting the text up may be necessary 
-        output_length = len(output)
-        num_of_outputs = (output_length // 1900) + 1
-        #Loop to split up response every 1900 characters
-        for i in range(0,num_of_outputs):
-            #Output "Continued" to Discord if text is being continued from previous output
-            if i >= 1:
-                await message.channel.send("(Continued)")
-            #Outputting the i'th iteration of 1900 characters (If more than 1900 characters are present, on first run it'll print out the first 1900 chars, then on the next run it'll print the next 1900 chars, and so on)
-            await message.channel.send(output[(1900*(i)):(1900*(i+1))])
+        await output_text(output, message)
         
     #Handle errors recieved during attempt to get response from OpenAI's API
     except Exception as e:
@@ -201,6 +202,18 @@ async def retry_api(query_func, retry_delay=5):
             print("Connection error. Retrying in", retry_delay, "seconds...")
             await asyncio.sleep(retry_delay)
 '''
+
+async def output_text(output, message):
+    output_length = len(output)
+    num_of_outputs = (output_length // 1900) + 1
+    #Loop to split up response every 1900 characters
+    for i in range(0,num_of_outputs):
+        #Output "Continued" to Discord if text is being continued from previous output
+        if i >= 1:
+            await message.channel.send("(Continued)")
+        #Outputting the i'th iteration of 1900 characters (If more than 1900 characters are present, on first run it'll print out the first 1900 chars, then on the next run it'll print the next 1900 chars, and so on)
+        await message.channel.send(output[(1900*(i)):(1900*(i+1))])
+
     
 #Run Discord bot
 bot.run(os.getenv('DISCORD_BOT_TOKEN'))

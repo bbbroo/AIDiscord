@@ -16,19 +16,8 @@ gpt35names=["!gpt-3.5-turbo", "!gpt-3.5", "!gpt3.5", "!gpt3", "!gpt35", "!gpt-35
 #List of acceptable inputs for changing AI model to GPT-4
 gpt4names=["!gpt-4", "!gpt4"]
 
-#Read the "AIPersona.txt" file to set the AI's persona: USE FOR STARTING NEW CONTEXT
-with open("AIPersona.txt", 'r', encoding="utf8") as chat:
-    persona = chat.read()
-
-#Read the "pastconversation.txt" file to pick up previous conversation: USE FOR PICKING UP PAST CONVERSATION
-# with open("pastconversation.txt", 'r', encoding="utf8") as chat:
-#     persona = chat.read()
-
-#Initiaing the AI's context array, and setting the AI's persona: USE FOR STARTING NEW CONTEXT
-messages = [{'role': "system", 'content': persona}]
-
-#Picking up the past AI's context array: USE FOR PICKING UP PAST CONVERSATION
-#messages = list(eval(persona))
+#Set default persona, in case none is provided
+persona = 'You will act as an expert in all subject matters.'
 
 #Retrieving the OpenAI API key from .env file
 openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -43,10 +32,35 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 #Function that runs once bot is ready
 @bot.event
 async def on_ready():
-    #Output to console that bot is connected to Discord
-    print(f'{bot.user} has connected to Discord!')
+    global persona
+    global messages
+
     #Set Discord channel to interact with OpenAI
     channel = bot.get_channel(int(os.getenv('DISCORD_CHANNEL_ID')))
+
+    #Read the "AIPersona.txt" file to set the AI's persona: USE FOR STARTING NEW CONTEXT
+    try:
+        with open("AIPersona.txt", 'r', encoding="utf8") as chat:
+            persona = chat.read()
+        if persona.strip()=="":
+            persona = 'You will act as an expert in all subject matters.'
+            await channel.send("""```ansi
+\u001b[1;33mWARNING! The"AIPersona.txt" file is empty! Please add your AI\'s persona to the text file, otherwise we can continue utilizing the default persona: """ + persona + "\n```")
+    except FileNotFoundError:
+        await channel.send("""```ansi
+\u001b[1;33mWARNING! "AIPersona.txt" file not found! Please add an "AIPersona.txt" file to the main directory with your desired AI persona included, otherwise we can continue utilizing the default persona: """ + persona + "\n```")
+
+    #Read the "pastconversation.txt" file to pick up previous conversation: USE FOR PICKING UP PAST CONVERSATION
+    # with open("pastconversation.txt", 'r', encoding="utf8") as chat:
+    #     persona = chat.read()
+
+    #Initiaing the AI's context array, and setting the AI's persona: USE FOR STARTING NEW CONTEXT
+    messages = [{'role': "system", 'content': persona}]
+
+    #Picking up the past AI's context array: USE FOR PICKING UP PAST CONVERSATION
+    #messages = list(eval(persona))
+    #Output to console that bot is connected to Discord
+    print(f'{bot.user} has connected to Discord!')
     #Output to Discord channel that bot is ready
     await channel.send('Bot is ready! Type !help at any time for help.')
 
@@ -66,7 +80,7 @@ async def on_message(message):
         #Strip input of whitespace and make lowercase
         cleaned_message = message.content.lower().strip()
         #Check if user wants the !help command and sends help message
-        if cleaned_message == "!help":
+        if cleaned_message.startswith('!help'):
             await message.channel.send("""```
 To show current AI model, type: !model
 To change the model to GPT-3.5, type: !gpt-3.5-turbo
@@ -78,20 +92,8 @@ To reset the AI's persona, type: !resetpersona```""")
             return
         
         #Command to clear the message context with the AI
-        if cleaned_message == "!clear":
+        if cleaned_message.startswith('!clear'):
             messages = [{'role': "system", 'content': persona}]
-            return
-        #Command to change model to GPT-4
-        if any(cleaned_message == c for c in gpt4names): 
-            #messages = [{'role': "system", 'content': persona}]
-            modelname = "gpt-4"
-            await message.channel.send("Updated model to: " + modelname)
-            return
-        #Command to change model to GPT-3.5-turbo
-        if any(cleaned_message == c for c in gpt35names): 
-            #messages = [{'role': "system", 'content': persona}]
-            modelname = "gpt-3.5-turbo"
-            await message.channel.send("Updated model to: " + modelname)
             return
         #Command to get persona
         if cleaned_message.startswith('!persona'):
@@ -114,6 +116,18 @@ To reset the AI's persona, type: !resetpersona```""")
         #Command to see current AI model
         if cleaned_message.startswith('!model'):
             await message.channel.send("The current AI model is: " + modelname)
+            return
+        #Command to change model to GPT-4
+        if any(cleaned_message.startswith(c) for c in gpt4names): 
+            #messages = [{'role': "system", 'content': persona}]
+            modelname = "gpt-4"
+            await message.channel.send("Updated model to: " + modelname)
+            return
+        #Command to change model to GPT-3.5-turbo
+        if any(cleaned_message.startswith(c) for c in gpt35names): 
+            #messages = [{'role': "system", 'content': persona}]
+            modelname = "gpt-3.5-turbo"
+            await message.channel.send("Updated model to: " + modelname)
             return
         #This will only be reached if none of the !commands above were used
         await message.channel.send("The command was not recognized, please try again. Type !help for a list of the possible commands.")
@@ -168,7 +182,7 @@ To reset the AI's persona, type: !resetpersona```""")
         g.write(str(messages))
         g.close()
 
-        #Discord only allows 2000 characters to be output, so splitting the text up may be necessary 
+        #Call output function
         await output_text(output, message)
         
     #Handle errors recieved during attempt to get response from OpenAI's API
@@ -203,6 +217,7 @@ async def retry_api(query_func, retry_delay=5):
             await asyncio.sleep(retry_delay)
 '''
 
+#Function to split up responses to less than 1900 characters, if needed, since Discord messages are limited to 2000 words
 async def output_text(output, message):
     output_length = len(output)
     num_of_outputs = (output_length // 1900) + 1

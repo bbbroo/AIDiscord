@@ -12,8 +12,9 @@ load_dotenv()
 assistants = {}
 active_assistant = None
 
-#Initial AI Model, can change to "gpt-4" if access is enabled 
+#Initial AI Model, you can change to "gpt-4" if access is enabled 
 modelname = 'gpt-3.5-turbo' #'gpt-4' #'gpt-3.5-turbo'
+
 #List of acceptable inputs for changing AI model to GPT-3.5
 gpt35names=["!gpt-3.5-turbo", "!gpt-3.5", "!gpt3.5", "!gpt3", "!gpt35", "!gpt-35"]
 #List of acceptable inputs for changing AI model to GPT-4
@@ -97,21 +98,22 @@ To get the AI's current persona, type: !persona
 To update the AI's persona, type: '!updatepersona' followed by the new persona's description (e.g. '!updatepersona This is the new persona')
 To reset the AI's persona, type: !resetpersona
 To add another assistant for an additional conversation context, without losing the current conversation, type: "!create" followed by the assistant's name(can only be one word) and the persona (e.g. '!create FunnyBot You are a master joke teller.') 
-To switch between assistants, type: '!switch' followed by the name of the assistant (e.g. !switch FunnyBot) ```""")
+To switch between assistants, type: '!switch' followed by the name of the assistant (e.g. !switch FunnyBot)
+To get a list of available assistants, type: !assistants```""")
             return
         
         #Command to clear the message context with the AI
-        if cleaned_message.startswith('!clear'):
+        elif cleaned_message.startswith('!clear'):
             assistants[active_assistant]["messages"] = [{'role': "system", 'content': persona}]
             await message.channel.send("Cleared message context.")
             return
         #Command to get persona
-        if cleaned_message.startswith('!persona'):
+        elif cleaned_message.startswith('!persona'):
             await message.channel.send("The current persona is: ")
             await output_text(persona, channel)
             return
         #Command to update persona
-        if cleaned_message.startswith('!updatepersona'):
+        elif cleaned_message.startswith('!updatepersona'):
             updated_persona = message.content.strip()[14:]
             if updated_persona != "":
                 assistants[active_assistant]["messages"].append({'role': "system", 'content': updated_persona})
@@ -122,23 +124,23 @@ To switch between assistants, type: '!switch' followed by the name of the assist
 \u001b[1;33mWARNING! Updated persona cannot be empty. Please add try the command again with text directly after the !updateprompt command, otherwise we can continue utilizing the current persona: """ + persona + "\n```")
             return
         #Command to reset persona
-        if cleaned_message.startswith('!resetpersona'):
+        elif cleaned_message.startswith('!resetpersona'):
             assistants[active_assistant]["messages"].append({'role': "system", 'content': persona})
             await message.channel.send("Persona has been reset to:")
             await output_text(persona, channel)
             return
         #Command to see current AI model
-        if cleaned_message.startswith('!model'):
+        elif cleaned_message.startswith('!model'):
             await message.channel.send("The current AI model is: " + modelname)
             return
         #Command to change model to GPT-4
-        if any(cleaned_message.startswith(c) for c in gpt4names): 
+        elif any(cleaned_message.startswith(c) for c in gpt4names): 
             #messages = [{'role': "system", 'content': persona}]
             modelname = "gpt-4"
             await message.channel.send("Updated model to: " + modelname)
             return
         #Command to change model to GPT-3.5-turbo
-        if any(cleaned_message.startswith(c) for c in gpt35names): 
+        elif any(cleaned_message.startswith(c) for c in gpt35names): 
             #messages = [{'role': "system", 'content': persona}]
             modelname = "gpt-3.5-turbo"
             await message.channel.send("Updated model to: " + modelname)
@@ -158,6 +160,9 @@ To switch between assistants, type: '!switch' followed by the name of the assist
             else:
                 await message.channel.send("Please provide a valid assistant name after the !switchassistant command.")
             return
+        elif cleaned_message.startswith('!assistants') or cleaned_message.startswith('!assistant') or cleaned_message.startswith('!asistant') or cleaned_message.startswith('!assist'):
+            await output_text('The current assistants you have available are: ' + str(', '.join(list(assistants.keys()))), channel)
+            return
         #This will only be reached if none of the !commands above were used
         await message.channel.send("The command was not recognized, please try again. Type !help for a list of the possible commands.")
         return
@@ -169,7 +174,7 @@ To switch between assistants, type: '!switch' followed by the name of the assist
     f.write(str(datetime.datetime.now()) + " - User: " + message.content + "\n")
     f.close()
 
-    #Adding users message to the 'messages' variable/adding it to the AI's context
+    #Adding users message to the assistant's context
     assistants[active_assistant]["messages"].append({'role': "user", 'content': message.content})
 
     #Retrieving the messages and personas of current assistant

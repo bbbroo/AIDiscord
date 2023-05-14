@@ -209,7 +209,7 @@ To get a list of available assistants, type: !assistants```""")
         
         #Get response text from API
         output = response['choices'][0]['message']['content']
-        #Adding AI's response to the 'messages' variable/adding it to the AI's context
+        #Adding AI's response to the current assistant's context
         assistants[active_assistant]["messages"].append({'role': "assistant", 'content': output})
 
         #Writing AI's response to the 'logs.txt' file

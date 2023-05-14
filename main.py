@@ -103,9 +103,13 @@ To reset the AI's persona, type: !resetpersona```""")
         #Command to update persona
         if cleaned_message.startswith('!updatepersona'):
             updated_persona = message.content.strip()[14:]
-            messages.append({'role': "system", 'content': updated_persona})
-            await message.channel.send("Updated persona to: ")
-            await output_text(updated_persona, message)
+            if updated_persona != "":
+                messages.append({'role': "system", 'content': updated_persona})
+                await message.channel.send("Updated persona to: ")
+                await output_text(updated_persona, message)
+            else:
+                await message.channel.send("""```ansi
+\u001b[1;33mWARNING! Updated persona cannot be empty. Please add try the command again with text directly after the !updateprompt command, otherwise we can continue utilizing the current persona: """ + persona + "\n```")
             return
         #Command to reset persona
         if cleaned_message.startswith('!resetpersona'):

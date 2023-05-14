@@ -4,7 +4,7 @@ This is a small project to integrate usage of the OpenAI API with Discord, in or
 
 * [Things you'll need](#things-youll-need)
 * [Usage](#usage)
-* [Contributing](#contributing
+* [Contributing](#contributing)
 * [License](#license)
 
 ## Things you'll need

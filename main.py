@@ -91,6 +91,8 @@ To reset the AI's persona, type: !resetpersona```""")
         output_length = len(output)
         num_of_outputs = (output_length // 1900) + 1
         for i in range(0,num_of_outputs):
+            if i >= 1:
+                await message.channel.send("(Continued)")
             await message.channel.send(output[(1900*(i)):(1900*(i+1))])
         
     except Exception as e:

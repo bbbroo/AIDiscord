@@ -55,8 +55,10 @@ async def on_message(message):
         return
     #Check if command is used
     if message.content[0] == "!":
+        #Strip input of whitespace and make lowercase
+        cleaned_message = message.content.lower().strip()
         #Check if user wants the !help command and sends help message
-        if message.content == "!help":
+        if cleaned_message == "!help":
             await message.channel.send("""```
 To show current AI model, type: !model
 To change the model to GPT-3.5, type: !gpt-3.5-turbo
@@ -65,37 +67,41 @@ To clear the message context, type: !clear
 To update the AI's persona, type: '!persona' followed by the new persona's description (e.g. '!persona This is the new persona')
 To reset the AI's persona, type: !resetpersona```""")
             return
+        
         #Command to clear the message context with the AI
-        if message.content.lower().strip() == "!clear":
+        if cleaned_message == "!clear":
             messages = [{'role': "system", 'content': persona}]
             return
         #Command to change model to GPT-4
-        if any(message.content.lower().strip() == c for c in gpt4names): 
+        if any(cleaned_message == c for c in gpt4names): 
             #messages = [{'role': "system", 'content': persona}]
             modelname = "gpt-4"
             await message.channel.send("Updated model to: " + modelname)
             return
         #Command to change model to GPT-3.5-turbo
-        if any(message.content.lower().strip() == c for c in gpt35names): 
+        if any(cleaned_message == c for c in gpt35names): 
             #messages = [{'role': "system", 'content': persona}]
             modelname = "gpt-3.5-turbo"
             await message.channel.send("Updated model to: " + modelname)
             return
         #Command to update persona
-        if message.content.startswith('!persona'):
+        if cleaned_message.startswith('!persona'):
             updated_persona = message.content.split('!persona')[1]
             messages.append({'role': "system", 'content': updated_persona})
             await message.channel.send("Updated persona to: " + updated_persona)
             return
         #Command to reset persona
-        if message.content.startswith('!resetpersona'):
+        if cleaned_message.startswith('!resetpersona'):
             messages.append({'role': "system", 'content': persona})
             await message.channel.send("Persona has been reset!")
             return
         #Command to see current AI model
-        if message.content.startswith('!model'):
+        if cleaned_message.startswith('!model'):
             await message.channel.send("The current AI model is: " + modelname)
             return
+        #This will only be reached if none of the !commands above were used
+        await message.channel.send("The command was not recognized, please try again. Type !help for a list of the possible commands.")
+        return
         
     #Writing users message to the AI to 'logs.txt' file
     f = open("logs.txt", "a+")

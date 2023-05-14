@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 modelname = 'gpt-3.5-turbo'
-gpt35names=["!gpt-3.5-turbo","!gpt-3.5","!GPT-3.5","!GPT-3.5-turbo", "!gpt3.5"]
-gpt4names=["!gpt-4","!GPT-4", "!gpt4"]
+gpt35names=["!gpt-3.5-turbo", "!gpt-3.5", "!gpt3.5", "!gpt3", "!gpt35", "!gpt-35"]
+gpt4names=["!gpt-4", "!gpt4"]
 
 with open("AIPersona.txt", 'r', encoding="utf8") as chat:
     persona = chat.read()
@@ -48,15 +48,15 @@ To clear the message context, type: !clear
 To update the AI's persona, type: '!persona' followed by the new persona's description (e.g. '!persona This is the new persona')
 To reset the AI's persona, type: !resetpersona```""")
             return
-        if message.content == "!clear":
+        if message.content.lower().strip() == "!clear":
             messages = [{'role': "system", 'content': persona}]
             return
-        if any(message.content == c for c in gpt4names): 
+        if any(message.content.lower().strip() == c for c in gpt4names): 
             #messages = [{'role': "system", 'content': persona}]
             modelname = "gpt-4"
             await message.channel.send("Updated model to: " + modelname)
             return
-        if any(message.content == c for c in gpt35names): 
+        if any(message.content.lower().strip() == c for c in gpt35names): 
             #messages = [{'role': "system", 'content': persona}]
             modelname = "gpt-3.5-turbo"
             await message.channel.send("Updated model to: " + modelname)

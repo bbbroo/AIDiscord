@@ -1,5 +1,5 @@
 import openai
-
+import time
 import discord
 from discord.ext import commands
 import datetime
@@ -10,18 +10,25 @@ from dotenv import load_dotenv
 load_dotenv()
 
 #Initial AI Model, can change to "gpt-4" if access is enabled 
-modelname = 'gpt-3.5-turbo'
+modelname = 'gpt-3.5-turbo' #'gpt-4' #'gpt-3.5-turbo'
 #List of acceptable inputs for changing AI model to GPT-3.5
 gpt35names=["!gpt-3.5-turbo", "!gpt-3.5", "!gpt3.5", "!gpt3", "!gpt35", "!gpt-35"]
 #List of acceptable inputs for changing AI model to GPT-4
 gpt4names=["!gpt-4", "!gpt4"]
 
-#Read the "AIPersona.txt" file to set the AI's persona
+#Read the "AIPersona.txt" file to set the AI's persona: USE FOR STARTING NEW CONTEXT
 with open("AIPersona.txt", 'r', encoding="utf8") as chat:
     persona = chat.read()
 
-#Initiaing the AI's context array, and setting the AI's persona
+#Read the "pastconversation.txt" file to pick up previous conversation: USE FOR PICKING UP PAST CONVERSATION
+# with open("pastconversation.txt", 'r', encoding="utf8") as chat:
+#     persona = chat.read()
+
+#Initiaing the AI's context array, and setting the AI's persona: USE FOR STARTING NEW CONTEXT
 messages = [{'role': "system", 'content': persona}]
+
+#Picking up the past AI's context array: USE FOR PICKING UP PAST CONVERSATION
+#messages = list(eval(persona))
 
 #Retrieving the OpenAI API key from .env file
 openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -113,13 +120,30 @@ To reset the AI's persona, type: !resetpersona```""")
 
     #Attempt to get a response from the OpenAI API, exception cases will run if error occurs
     try:
-        #Show bot as typing on Discord while waiting for API respponse
-        async with message.channel.typing(): 
-            #Giving API input of model and message context
-            response = openai.ChatCompletion.create(
-        model=modelname,
-        messages=messages
-        )
+
+        #response = await retry_api(query_openai_api)  #TEST FUNCTIONS
+
+        #Show bot as typing on Discord while waiting for API response: ACTUAL FUNCTION
+        async with message.channel.typing():
+        #Giving API input of model and message context
+            for retry in range(3):  # Set the number of retries here (3 in this example)
+                try:
+                    response = openai.ChatCompletion.create(
+                        model=modelname,
+                        messages=messages
+                    )
+                    break  # If successful, break the loop and continue processing the response
+                except Exception as e:
+                    if "Connection aborted" in str(e):  # Check if the error is due to connection abort
+                        print(e)
+                        if retry < 2:  # Only retry if the retry count is less than the limit (2 in this example)
+                            time.sleep(5)  # Wait for 5 seconds before retrying
+                            continue  # Retry the request
+                    else:
+                        raise  # Raise the error if it is not related to the connection
+            else:  # If the loop finishes without a successful request
+                raise Exception("Exceeded the number of retries. Failed to obtain response from the API.")
+        
         #Get response text from API
         output = response['choices'][0]['message']['content']
         #Adding AI's response to the 'messages' variable/adding it to the AI's context
@@ -154,6 +178,29 @@ To reset the AI's persona, type: !resetpersona```""")
         await message.channel.send(e)
         await message.channel.send("Something went wrong, try asking again.")
         return
+    
+
+'''
+#Function to query the OpenAI API
+async def query_openai_api():
+    async with message.channel.typing():
+        response = openai.ChatCompletion.create(
+            model=modelname,
+            messages=messages
+        )
+    return response
+
+
+#Function to retry querying the OpenAI API 5 seconds after receiving 'Connection error'
+async def retry_api(query_func, retry_delay=5):
+    while True:
+        try:
+            result = await query_func()
+            return result
+        except RemoteDisconnected as e:
+            print("Connection error. Retrying in", retry_delay, "seconds...")
+            await asyncio.sleep(retry_delay)
+'''
     
 #Run Discord bot
 bot.run(os.getenv('DISCORD_BOT_TOKEN'))

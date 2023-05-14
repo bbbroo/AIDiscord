@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 #Initial AI Model, can change to "gpt-4" if access is enabled 
-modelname = 'gpt-3.5-turbo' #'gpt-4' #'gpt-3.5-turbo'
+modelname = 'gpt-4' #'gpt-4' #'gpt-3.5-turbo'
 #List of acceptable inputs for changing AI model to GPT-3.5
 gpt35names=["!gpt-3.5-turbo", "!gpt-3.5", "!gpt3.5", "!gpt3", "!gpt35", "!gpt-35"]
 #List of acceptable inputs for changing AI model to GPT-4
@@ -94,6 +94,7 @@ To reset the AI's persona, type: !resetpersona```""")
         #Command to clear the message context with the AI
         if cleaned_message.startswith('!clear'):
             messages = [{'role': "system", 'content': persona}]
+            await message.channel.send("Cleared message context.")
             return
         #Command to get persona
         if cleaned_message.startswith('!persona'):

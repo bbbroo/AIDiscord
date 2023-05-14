@@ -4,6 +4,7 @@ This is a small project to integrate usage of the OpenAI API with Discord, in or
 
 * [Things you'll need](#things-youll-need)
 * [Usage](#usage)
+* [Features](#features)
 * [Contributing](#contributing)
 * [License](#license)
 
@@ -41,6 +42,14 @@ python Test.py
 ```
 
 Once the script is up and runnning, you will get a message from the You can chat back and forth with GPT-3.5 on the command line. You can also update 'modelname' in Test.py to 'gpt-4' if you have API access to that model.
+
+## Features
+
+✅ Ability to chat with GPT-3.5 & GPT-4 in Discord. </br>
+✅ Provide persona for AI, and ability to customize on the fly. </br>
+✅ Functionality to recover past conversations. </br>
+✅ Ability to create and switch between multiple assistants all with different context and personasm without losing information.  </br>
+<!-- ⬜ Mercur -->
 
 ## Contributing
 

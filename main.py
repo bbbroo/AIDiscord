@@ -161,6 +161,7 @@ To get a list of available assistants, type: !assistants```""")
             else:
                 await message.channel.send("Please provide a valid assistant name after the !switchassistant command.")
             return
+        #Command to view all assistants
         elif cleaned_message.startswith('!assistants') or cleaned_message.startswith('!assistant') or cleaned_message.startswith('!asistant') or cleaned_message.startswith('!assist'):
             await output_text('The current assistants you have available are: ' + str(', '.join(list(assistants.keys()))), channel)
             return

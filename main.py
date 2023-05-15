@@ -185,9 +185,6 @@ To get a list of available assistants, type: !assistants```""")
 
     #Attempt to get a response from the OpenAI API, exception cases will run if error occurs
     try:
-
-        #response = await retry_api(query_openai_api)  #TEST FUNCTIONS
-
         #Show bot as typing on Discord while waiting for API response: ACTUAL FUNCTION
         async with message.channel.typing():
         #Giving API input of model and message context

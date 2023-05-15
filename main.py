@@ -153,6 +153,7 @@ To get a list of available assistants, type: !assistants```""")
             else:
                 await message.channel.send("Please provide a valid assistant name and persona after the !initassistant command (e.g., !initassistant MyAssistant My persona is an expert in Python).")
             return
+        #Command to switch assistants
         elif cleaned_message.startswith('!switch'):
             assistant_name = message.content.strip()[7:].strip()
             if assistant_name != "":

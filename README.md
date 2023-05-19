@@ -38,10 +38,10 @@ Next, copy the `.env.example` to `.env` and enter your OpenAI API key, Discord C
 Once all of those steps are complete, run the script with the command:
 
 ```
-python Test.py
+python main.py
 ```
 
-Once the script is up and runnning, you will get a message from the You can chat back and forth with GPT-3.5 on the command line. You can also update 'modelname' in Test.py to 'gpt-4' if you have API access to that model.
+Once the script is up and runnning, you will get a message from the You can chat back and forth with GPT-3.5 on the command line. You can also update 'modelname' in main.py to 'gpt-4' if you have API access to that model.
 
 ## Features
 

@@ -168,7 +168,7 @@ To get the AI's message context, type: !context```""")
             return
         #Command to view AI's message context
         elif cleaned_message.startswith('!context'):
-            await output_text(messages, channel)
+            await output_text(assistants[active_assistant]["messages"], channel)
             return
         
         #This will only be reached if none of the !commands above were used

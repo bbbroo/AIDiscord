@@ -99,7 +99,8 @@ To update the AI's persona, type: '!updatepersona' followed by the new persona's
 To reset the AI's persona, type: !resetpersona
 To add another assistant for an additional conversation context, without losing the current conversation, type: "!create" followed by the assistant's name(can only be one word) and the persona (e.g. '!create FunnyBot You are a master joke teller.') 
 To switch between assistants, type: '!switch' followed by the name of the assistant (e.g. !switch FunnyBot)
-To get a list of available assistants, type: !assistants```""")
+To get a list of available assistants, type: !assistants
+To get the AI's message context, type: !context```""")
             return
         
         #Command to clear the message context with the AI
@@ -165,9 +166,16 @@ To get a list of available assistants, type: !assistants```""")
         elif cleaned_message.startswith('!assistants') or cleaned_message.startswith('!assistant') or cleaned_message.startswith('!asistant') or cleaned_message.startswith('!assist'):
             await output_text('The current assistants you have available are: ' + str(', '.join(list(assistants.keys()))), channel)
             return
+        #Command to view AI's message context
+        elif cleaned_message.startswith('!context'):
+            await output_text(messages, channel)
+            return
+        
         #This will only be reached if none of the !commands above were used
         await message.channel.send("The command was not recognized, please try again. Type !help for a list of the possible commands.")
         return
+
+        
     
     
         
